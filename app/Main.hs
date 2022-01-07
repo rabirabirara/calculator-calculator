@@ -6,23 +6,25 @@ import Move
 import Calc
 import Data.List.Split (splitOn)
 -- import System.Environment   -- for getArgs
-import Debug.Trace
+-- import Debug.Trace
 
 -- read and show are for String -> a and a -> String
 parseMove :: String -> Move
 parseMove m = 
     let (mc : num) = m
      in case mc of
-          'a' -> trace (show num) $ trace (read num) $ Add (read num) 
+          'a' -> Add (read num) 
           's' -> Sub (read num) 
           'm' -> Mul (read num) 
           'd' -> Div (read num) 
           'e' -> Exp (read num) 
           'f' -> Flip
+          'r' -> Rev
           'b' -> Back
           'c' -> Conc num
           't' -> let args = splitOn ">" num 
                   in Trans (head args) (head $ tail args)
+          _   -> undefined
 
 parseMoves :: String -> [Move]
 parseMoves mstr = map parseMove $ splitOn "," mstr
@@ -30,12 +32,10 @@ parseMoves mstr = map parseMove $ splitOn "," mstr
 readInt :: IO Int
 readInt = readLn
 
-readStr :: IO String
-readStr = readLn
-
 -- = vs. <-: https://stackoverflow.com/a/28625714/13553596
 -- also, use trace to print debug statements (not print)
 -- also, use putStrLn to print Strings, or you'll get double quotes (from show)
+-- also, use getLine and getChar to read Strings and Chars, so you don't need quotes.
 main :: IO ()
 main = do
     putStrLn "Enter starting number:"
@@ -44,12 +44,15 @@ main = do
     goal <- readInt
     putStrLn "Enter number of moves:"
     depth <- readInt
-    putStrLn "Enter movelist.  See Main.hs for move list specification. Also, use double quotes, please."
-    moves <- readStr
-    print moves
-    print (splitOn "," moves)
+    putStrLn "Enter movelist.  See Main.hs for move list specification."
+    moves <- getLine
     let problem = Calc {start = start, goal = goal, depth = depth, moves = parseMoves moves}
      in print (solve problem)
+    putStrLn "Do you want to continue? (y/n)"
+    continue <- getChar
+    if continue == 'y' || continue == '\n'
+       then main
+       else pure ()     -- 'pure' is a Monad function that wraps its argument in the proper monad. aka 'return'.
 
 -- debugging: https://www.reddit.com/r/haskell/comments/oqb1g/using_print_statements_in_code_for_debugging/
 
@@ -60,5 +63,6 @@ Perhaps in move simplicity?  For example, the entropy of flipping the sign of a 
 Backspace has a little more entropy, but less than concat because it can't occur twice.
 Frankly looks like a hard problem, but who knows, maybe some emergent behavior will arise.  Machine learning application??
 
+-Honestly seems like a heuristic for this is as hard as solving the Collatz conjecture.
 
 -}
