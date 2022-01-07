@@ -4,7 +4,7 @@ Solves puzzles from the game "Calculator: The Game".
 ## How to use
 
 This project was built with cabal.  On the off chance you have cabal installed, and it happens to work,
-use `cabal run` in the command line and follow the instructions.
+use `cabal run` in the command line and follow the instructions.  Else, search the build directories in `dist-newstyle` for the executable.
 
 ## How to input available moves?
 
