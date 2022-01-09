@@ -9,6 +9,7 @@ import Data.List.Split (splitOn)
 -- import Debug.Trace
 
 -- read and show are for String -> a and a -> String
+-- so for case statements haskell considers indentation of _, so don't space it out of line with the other cases.
 parseMove :: String -> Move
 parseMove m = 
     let (mc : num) = m
@@ -19,9 +20,15 @@ parseMove m =
           'd' -> Div (read num) 
           'e' -> Exp (read num) 
           'f' -> Flip
+          '+' -> Sum
           'r' -> Rev
           'b' -> Back
-          'c' -> Conc num
+          '|' -> Mirror
+          'c' -> Concat num
+          'h' -> case (head num) of
+                   'l' -> Shift L
+                   'r' -> Shift R
+                   _   -> undefined
           't' -> let args = splitOn ">" num 
                   in Trans (head args) (head $ tail args)
           _   -> undefined
@@ -64,5 +71,7 @@ Backspace has a little more entropy, but less than concat because it can't occur
 Frankly looks like a hard problem, but who knows, maybe some emergent behavior will arise.  Machine learning application??
 
 -Honestly seems like a heuristic for this is as hard as solving the Collatz conjecture.
+
+-Actually, there may yet be a heuristic.  For example, fail-fast is possible - moves such as Mirror are bound to fail-fast, and Trans is sometimes impossible.
 
 -}
