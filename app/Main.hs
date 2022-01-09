@@ -4,7 +4,8 @@ module Main (main) where
 -- We also choose what to import with lists in parentheses.
 import Move
 import Calc
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, isJust, fromMaybe)
+import Data.List (find)
 import Data.List.Split (splitOn)
 -- import System.Environment   -- for getArgs
 -- import Debug.Trace
@@ -27,6 +28,8 @@ parseMove m =
           '^' -> Change num
           '|' -> Mirror
           'c' -> Concat num
+          '#' -> Store
+          '@' -> MemCon num
           'h' -> case (head num) of
                    'l' -> Shift L
                    'r' -> Shift R
@@ -41,15 +44,23 @@ parseChange (mc:num) =
       '^' -> Just (Inc (read num))
       _   -> Nothing
 
+parseStore :: String -> Maybe Int
+parseStore (mc:num) =
+    case mc of
+      '@' -> Just (read num)
+      _   -> Nothing
+
 
 -- don't add Change moves to the normal Move list
 -- the Change type constructors in Move are for display only
-parseMoves :: String -> ([Move], [Change])
+parseMoves :: String -> ([Move], [Change], Maybe Int)
 parseMoves mstr = 
     let buttons = splitOn "," mstr
         moves = map parseMove buttons
         changes = catMaybes $ map parseChange buttons
-     in (moves, changes)
+        -- remember, we only expect to have one Store button.  if there are more... TODO
+        storage = fromMaybe Nothing $ find isJust $ map parseStore buttons
+     in (moves, changes, storage)
 
 readInt :: IO Int
 readInt = readLn
@@ -68,13 +79,14 @@ main = do
     depth <- readInt
     putStrLn "Enter movelist.  See Main.hs for move list specification."
     ms <- getLine
-    let (moves, changes) = parseMoves ms
+    let (moves, changes, storage) = parseMoves ms
         problem = 
-            Calc   {start  = start
+            Calc { start   = start
                  , goal    = goal
                  , depth   = depth
                  , moves   = moves
                  , changes = changes
+                 , storage = storage
                  }
      in print (solve problem)
     putStrLn "Do you want to continue? (Y/n)"

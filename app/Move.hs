@@ -1,4 +1,4 @@
-module Move (Move (..), Dir (..), doMoves, move) where
+module Move (Move (..), Dir (..), doMoves, move, isMemCon) where
 
 import Data.Char
 import Data.Maybe (catMaybes)
@@ -6,7 +6,7 @@ import Data.List (isInfixOf)
 import Data.Text (Text (..), pack, unpack, replace)    -- for string functions
 -- import Debug.Trace
 
-data Move = Add Int | Sub Int | Mul Int | Div Int | Exp Int | Flip | Sum | Rev | Back | Change String | Mirror | Concat String | Shift Dir | Trans String String deriving Show
+data Move = Add Int | Sub Int | Mul Int | Div Int | Exp Int | Flip | Sum | Rev | Back | Change String | Mirror | Concat String | Store |  MemCon String | Shift Dir | Trans String String deriving Show
 data Dir = L | R deriving Show
 
 -- To define a function, put the type signature first, then the function patterns.
@@ -31,6 +31,9 @@ move i  Back       = if i == 0
 move i (Change _)  = Nothing
 move i  Mirror     = Just (Mirror, mirror i)
 move i (Concat sn) = Just (Concat sn, conc i sn)
+-- Storing does not use a move; memconcat does.
+move i  Store      = Nothing
+move i (MemCon sn) = Just (MemCon sn, conc i sn)
 move i (Shift dir) = Just (Shift dir, shift i dir)
 -- wastes of Trans moves are invalid - though this does mean 
 -- the solver won't find solves of less depth! can fix this with IDDFS
@@ -110,3 +113,7 @@ mirror i = read $ si ++ rsi
                    then reverse $ tail si
                    else reverse si
               
+
+isMemCon :: Move -> Bool
+isMemCon (MemCon _) = True
+isMemCon _ = False
