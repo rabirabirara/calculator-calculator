@@ -1,7 +1,7 @@
 module Calc (Calc (..), Change (..), solve) where
 
 import Move
--- import Debug.Trace
+import Debug.Trace
 
 -- record syntax - for product types with named type constructors
 data Calc = Calc 
@@ -48,7 +48,7 @@ change c ch =
              }
 
 incMove :: Int -> Move -> Move
-incMove i mv =
+incMove i mv = trace "HERE" $
     case mv of
       Add num -> Add (num + i)
       Sub num -> Sub (num + i)

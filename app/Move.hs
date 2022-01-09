@@ -4,9 +4,9 @@ import Data.Char
 import Data.Maybe (catMaybes)
 import Data.List (isInfixOf)
 import Data.Text (Text (..), pack, unpack, replace)    -- for string functions
--- import Debug.Trace
+import Debug.Trace
 
-data Move = Add Int | Sub Int | Mul Int | Div Int | Exp Int | Flip | Sum | Rev | Back | Change String | Mirror | Concat String | Store |  MemCon String | Shift Dir | Trans String String deriving Show
+data Move = Add Int | Sub Int | Mul Int | Div Int | Exp Int | Flip | Sum | Rev | Back | Change String | Mirror | Concat String | Store |  MemCon String | Inv10 | Shift Dir | Trans String String deriving Show
 data Dir = L | R deriving Show
 
 -- To define a function, put the type signature first, then the function patterns.
@@ -30,10 +30,11 @@ move i  Back       = if i == 0
 -- not supposed to be used - it's for display
 move i (Change _)  = Nothing
 move i  Mirror     = Just (Mirror, mirror i)
-move i (Concat sn) = Just (Concat sn, conc i sn)
--- Storing does not use a move; memconcat does.
+-- for some reason, concatenating a negative number breaks the game.  see lvl. 148
+move i (Concat sn) = if head sn == '-' then Nothing else Just (Concat sn, conc i sn)
 move i  Store      = Nothing
-move i (MemCon sn) = Just (MemCon sn, conc i sn)
+move i (MemCon sn) = if head sn == '-' then Nothing else Just (MemCon sn, conc i sn)
+move i  Inv10      = Just (Inv10, inv10 i)
 move i (Shift dir) = Just (Shift dir, shift i dir)
 -- wastes of Trans moves are invalid - though this does mean 
 -- the solver won't find solves of less depth! can fix this with IDDFS
@@ -58,6 +59,7 @@ deleteLast [] = []      -- unreachable
 deleteLast [n] = []
 deleteLast (h:t) = h : (deleteLast t)
 
+-- ? sn cannot be a negative number.  the game will just break!
 conc :: Int -> String -> Int
 conc i sn = read $ (show i) ++ sn
      
@@ -81,6 +83,7 @@ sumDigits i = if i < 0
                  then negate $ sum $ map toInt $ tail $ show i
                  else sum $ map toInt $ show i
 
+-- reverse an integer's digits
 revInt :: Int -> Int
 revInt i = if i < 0
               then negate $ (read . reverse) $ tail $ show i
@@ -117,3 +120,17 @@ mirror i = read $ si ++ rsi
 isMemCon :: Move -> Bool
 isMemCon (MemCon _) = True
 isMemCon _ = False
+
+
+inv10 :: Int -> Int
+inv10 i =
+    let si = show i
+     in read $ map invertChar10 si
+
+invertChar10 :: Char -> Char
+invertChar10 c = 
+    case c of
+      '-' -> '-'
+      '0' -> '0'
+      d -> toChr $ 10 - toInt d
+

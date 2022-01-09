@@ -30,6 +30,7 @@ parseMove m =
           'c' -> Concat num
           '#' -> Store
           '@' -> MemCon num
+          'i' -> Inv10
           'h' -> case (head num) of
                    'l' -> Shift L
                    'r' -> Shift R
