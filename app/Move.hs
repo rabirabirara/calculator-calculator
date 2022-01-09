@@ -6,7 +6,7 @@ import Data.List (isInfixOf)
 import Data.Text (Text (..), pack, unpack, replace)    -- for string functions
 -- import Debug.Trace
 
-data Move = Add Int | Sub Int | Mul Int | Div Int | Exp Int | Flip | Sum | Rev | Back | Mirror | Concat String | Shift Dir | Trans String String deriving Show
+data Move = Add Int | Sub Int | Mul Int | Div Int | Exp Int | Flip | Sum | Rev | Back | Change String | Mirror | Concat String | Shift Dir | Trans String String deriving Show
 data Dir = L | R deriving Show
 
 -- To define a function, put the type signature first, then the function patterns.
@@ -27,6 +27,8 @@ move i  Rev        = Just (Rev, revInt i)
 move i  Back       = if i == 0
                         then Nothing
                         else Just (Back, delete i)
+-- not supposed to be used - it's for display
+move i (Change _)  = Nothing
 move i  Mirror     = Just (Mirror, mirror i)
 move i (Concat sn) = Just (Concat sn, conc i sn)
 move i (Shift dir) = Just (Shift dir, shift i dir)

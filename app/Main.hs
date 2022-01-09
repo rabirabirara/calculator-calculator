@@ -4,6 +4,7 @@ module Main (main) where
 -- We also choose what to import with lists in parentheses.
 import Move
 import Calc
+import Data.Maybe (catMaybes)
 import Data.List.Split (splitOn)
 -- import System.Environment   -- for getArgs
 -- import Debug.Trace
@@ -23,6 +24,7 @@ parseMove m =
           '+' -> Sum
           'r' -> Rev
           'b' -> Back
+          '^' -> Change num
           '|' -> Mirror
           'c' -> Concat num
           'h' -> case (head num) of
@@ -33,8 +35,21 @@ parseMove m =
                   in Trans (head args) (head $ tail args)
           _   -> undefined
 
-parseMoves :: String -> [Move]
-parseMoves mstr = map parseMove $ splitOn "," mstr
+parseChange :: String -> Maybe Change
+parseChange (mc:num) = 
+    case mc of
+      '^' -> Just (Inc (read num))
+      _   -> Nothing
+
+
+-- don't add Change moves to the normal Move list
+-- the Change type constructors in Move are for display only
+parseMoves :: String -> ([Move], [Change])
+parseMoves mstr = 
+    let buttons = splitOn "," mstr
+        moves = map parseMove buttons
+        changes = catMaybes $ map parseChange buttons
+     in (moves, changes)
 
 readInt :: IO Int
 readInt = readLn
@@ -52,10 +67,17 @@ main = do
     putStrLn "Enter number of moves:"
     depth <- readInt
     putStrLn "Enter movelist.  See Main.hs for move list specification."
-    moves <- getLine
-    let problem = Calc {start = start, goal = goal, depth = depth, moves = parseMoves moves}
+    ms <- getLine
+    let (moves, changes) = parseMoves ms
+        problem = 
+            Calc   {start  = start
+                 , goal    = goal
+                 , depth   = depth
+                 , moves   = moves
+                 , changes = changes
+                 }
      in print (solve problem)
-    putStrLn "Do you want to continue? (y/n)"
+    putStrLn "Do you want to continue? (Y/n)"
     continue <- getChar
     if continue == 'y' || continue == '\n'
        then main

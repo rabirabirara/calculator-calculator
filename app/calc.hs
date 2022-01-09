@@ -1,16 +1,21 @@
--- TODO: Big flaw where start is larger than goal and we have Div move. in which case we will integer divide and never produce the right answer.  Need to write constraint with Move Div where you cannot produce a remainder.
-module Calc (Calc (..), solve) where
+module Calc (Calc (..), Change (..), solve) where
 
 import Move
 -- import Debug.Trace
 
 -- record syntax - for product types with named type constructors
 data Calc = Calc 
-    { start :: Int
-    , goal  :: Int
-    , depth :: Int
-    , moves :: [Move]
+    { start   :: Int
+    , goal    :: Int
+    , depth   :: Int
+    , moves   :: [Move]
+    , changes :: [Change]   -- for buttons that alter moves
     } deriving Show
+
+data Change = Inc Int deriving Show
+
+changeToMove :: Change -> Move
+changeToMove (Inc i) = Change ("[+]" ++ show i)
 
 -- Even if it's points-free, you still have to include everything in the signature.
 successor :: Calc -> (Int -> [(Move, Int)])
@@ -21,6 +26,37 @@ test c = (== (goal c))
 
 invalid :: Int -> Bool
 invalid i = i > 999999 || i < -99999
+
+-- for each change in (changes c), produce a new Calc along with the Change that got there.
+produceChanges :: Calc -> [(Change, Calc)]
+produceChanges c = map (\ch -> (ch, change c ch)) (changes c)
+
+-- applies a change to a calc
+change :: Calc -> Change -> Calc
+change c (Inc i) = 
+    let newStart = start c
+        newGoal = goal c
+        newDepth = depth c
+        newMoves = map (incMove i) (moves c)
+        newChanges = (changes c)
+     in Calc { start   = newStart
+             , goal    = newGoal
+             , depth   = newDepth
+             , moves   = newMoves
+             , changes = newChanges
+             }
+
+incMove :: Int -> Move -> Move
+incMove i mv =
+    case mv of
+      Add num -> Add (num + i)
+      Sub num -> Sub (num + i)
+      Mul num -> Mul (num + i)
+      Div num -> Div (num + i)
+      Exp num -> Exp (num + i)
+      Concat snum -> Concat (show $ i + read snum)
+      -- TODO: implement inc of Trans
+      mv -> mv
 
 -- TODO: Write an interactive solve that can produce all solutions, instead of just one.
 -- TODO: Write an iterative-deepening depth-first-search as well, so we simply find all solutions given a certain depth.  Have it terminate at the shortest depth.
@@ -39,7 +75,10 @@ solve_help c path i d =
     if invalid i 
        then [] 
        else let nextStates = successor c i
-             in findShortestPath $ map (\(nextMove, nextNum) -> solve_help c (nextMove : path) nextNum (d-1)) nextStates
+                newCalcs = produceChanges c
+             in findShortestPath $ (map (\(nextMove, nextNum) -> solve_help c (nextMove : path) nextNum (d-1)) nextStates)
+             ++ (map (\(change, newCalc) -> solve_help newCalc ((changeToMove change) : path) i (d-1)) newCalcs)
+
 
 findShortestPath :: [[Move]] -> [Move]
 findShortestPath = findShortestPathHelp (maxBound :: Int) []
