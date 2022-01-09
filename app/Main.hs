@@ -45,10 +45,11 @@ parseChange (mc:num) =
       '^' -> Just (Inc (read num))
       _   -> Nothing
 
-parseStore :: String -> Storage
+parseStore :: String -> Maybe Storage
 parseStore (mc:num) =
     case mc of
-      '@' -> Just (read num)
+      '@' -> Just (Just (read num))
+      '#' -> Just Nothing
       _   -> Nothing
 
 
@@ -60,7 +61,7 @@ parseMoves mstr =
         moves = map parseMove buttons
         changes = mapMaybe parseChange buttons
         -- remember, we only expect to have one Store button.  if there are more... TODO
-        storage = find isJust $ map parseStore buttons
+        storage = fromMaybe Nothing $ find isJust $ map parseStore buttons
      in trace (show storage) $ (moves, changes, storage)
 
 readInt :: IO Int
