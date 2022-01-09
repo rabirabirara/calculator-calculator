@@ -1,6 +1,7 @@
-module Calc (Calc (..), Change (..), solve) where
+module Calc (Calc (..), Change (..), Storage (..), solve) where
 
 import Move
+import Data.Maybe (isJust)
 import Debug.Trace
 
 -- record syntax - for product types with named type constructors
@@ -10,8 +11,10 @@ data Calc = Calc
     , depth   :: Int
     , moves   :: [Move]
     , changes :: [Change]   -- for buttons that alter moves
-    , storage :: Maybe Int
+    , storage :: Maybe Storage
     } deriving Show
+
+type Storage = Maybe Int
 
 -- Even if it's points-free, you still have to include everything in the signature.
 successor :: Calc -> (Int -> [(Move, Int)])
@@ -38,12 +41,13 @@ change c ch =
     let newMoves = 
             case ch of
               Inc i -> map (incMove i) (moves c)
-        newStorage = changeMem ch (storage c)
+        newStorage = (changeMem ch) (storage c)
      in Calc { start   = start c
              , goal    = goal c
              , depth   = depth c
              , moves   = newMoves
              , changes = changes c
+             -- fmap Just (mx) will wrap mx in second Just or leave as Nothing
              , storage = newStorage
              }
 
@@ -68,18 +72,19 @@ writeMem i c = Calc { start = start c
                     , depth = depth c
                     , moves = writeMemToMoves (moves c) (Just i)
                     , changes = changes c
-                    , storage = Just i
+                    , storage = Just (Just i)
                     }
 
 -- update a movelist with memory by erasing the old memconcat buttons and adding the new one.
-writeMemToMoves :: [Move] -> Maybe Int -> [Move]
+writeMemToMoves :: [Move] -> Storage -> [Move]
 writeMemToMoves mlst mem =
     case mem of
       Nothing -> mlst
       Just i -> MemCon (show i) : filter (\m -> not $ isMemCon m) mlst
 
-changeMem :: Change -> Maybe Int -> Maybe Int
-changeMem (Inc i) (Just mem) = Just (i + mem)
+changeMem :: Change -> Maybe Storage -> Maybe Storage
+changeMem (Inc i) (Just (Just mem)) = Just (Just (i + mem))
+changeMem _ Nothing = Nothing
 
 
 -- TODO: Write an interactive solve that can produce all solutions, instead of just one.
@@ -99,13 +104,16 @@ solve_help c path i d stored =
     -- if test c i then path else   -- use this for exploration, not for solving.
     if invalid i 
        then [] 
-       else let nextStates = successor c i
-                newCalcs = produceChanges c
-                pathsPostStorage = if stored then [] else solve_help (writeMem i c) (Store : path) i (d-1) True
-             in findShortestPath $ pathsPostStorage
-             :  (map (\(nextMove, nextNum) -> solve_help c (nextMove : path) nextNum (d-1) False) nextStates)
-             ++ (map (\(change, newCalc) -> solve_help newCalc ((changeToMove change) : path) i (d-1) False) newCalcs)
-
+       else 
+       let nextStates = successor c i
+           newCalcs = produceChanges c
+           pathsPostStorage = 
+               if isJust (storage c) && not stored 
+                  then solve_help (writeMem i c) (Store : path) i (d-1) True 
+                  else []
+        in findShortestPath $ pathsPostStorage
+        :  (map (\(nextMove, nextNum) -> solve_help c (nextMove : path) nextNum (d-1) False) nextStates)
+        ++ (map (\(change, newCalc) -> solve_help newCalc ((changeToMove change) : path) i (d-1) False) newCalcs)
 
 findShortestPath :: [[Move]] -> [Move]
 findShortestPath = findShortestPathHelp (maxBound :: Int) []

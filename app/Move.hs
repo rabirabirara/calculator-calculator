@@ -1,7 +1,7 @@
 module Move (Move (..), Dir (..), doMoves, move, isMemCon) where
 
 import Data.Char
-import Data.Maybe (catMaybes)
+import Data.Maybe (mapMaybe)
 import Data.List (isInfixOf)
 import Data.Text (Text (..), pack, unpack, replace)    -- for string functions
 import Debug.Trace
@@ -46,7 +46,7 @@ move i (Trans a b) =
 
 -- gets rid of Nothing values (invalid moves)
 doMoves :: Int -> [Move] -> [(Move, Int)]
-doMoves i mlst = catMaybes $ map (move i) mlst
+doMoves i mlst = mapMaybe (move i) mlst
 
 -- read :: String -> a, show :: a -> String
 delete :: Int -> Int

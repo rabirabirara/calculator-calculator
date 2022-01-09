@@ -1,3 +1,6 @@
 55 13 4 "a9,f,b"
 
 23 115 6 "s8,#,f"
+
+23 88 5 s4,s2,r,i
+Putting the moves in this order, the path would end up using Store and MemCon despite there being no such button.  Have to patch that out - if there's no storage button, there's no storage button.

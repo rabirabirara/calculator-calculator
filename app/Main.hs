@@ -4,11 +4,11 @@ module Main (main) where
 -- We also choose what to import with lists in parentheses.
 import Move
 import Calc
-import Data.Maybe (catMaybes, isJust, fromMaybe)
+import Data.Maybe (mapMaybe, isJust, fromMaybe)
 import Data.List (find)
 import Data.List.Split (splitOn)
 -- import System.Environment   -- for getArgs
--- import Debug.Trace
+import Debug.Trace
 
 -- read and show are for String -> a and a -> String
 -- so for case statements haskell considers indentation of _, so don't space it out of line with the other cases.
@@ -45,7 +45,7 @@ parseChange (mc:num) =
       '^' -> Just (Inc (read num))
       _   -> Nothing
 
-parseStore :: String -> Maybe Int
+parseStore :: String -> Storage
 parseStore (mc:num) =
     case mc of
       '@' -> Just (read num)
@@ -54,14 +54,14 @@ parseStore (mc:num) =
 
 -- don't add Change moves to the normal Move list
 -- the Change type constructors in Move are for display only
-parseMoves :: String -> ([Move], [Change], Maybe Int)
+parseMoves :: String -> ([Move], [Change], Maybe Storage)
 parseMoves mstr = 
     let buttons = splitOn "," mstr
         moves = map parseMove buttons
-        changes = catMaybes $ map parseChange buttons
+        changes = mapMaybe parseChange buttons
         -- remember, we only expect to have one Store button.  if there are more... TODO
-        storage = fromMaybe Nothing $ find isJust $ map parseStore buttons
-     in (moves, changes, storage)
+        storage = find isJust $ map parseStore buttons
+     in trace (show storage) $ (moves, changes, storage)
 
 readInt :: IO Int
 readInt = readLn
