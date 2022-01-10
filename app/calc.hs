@@ -1,7 +1,8 @@
-module Calc (Calc (..), Change (..), Storage (..), solve) where
+module Calc (Calc (..), Change (..), Storage (..), Prop (..), solve) where
 
 import Move
 import Data.Maybe (isJust)
+import Data.Array (listArray)
 import Debug.Trace
 
 -- record syntax - for product types with named type constructors
@@ -11,10 +12,17 @@ data Calc = Calc
     , depth   :: Int
     , moves   :: [Move]
     , changes :: [Change]   -- for buttons that alter moves
-    , storage :: Maybe Storage
+    , storage :: Maybe Storage  -- TODO: Maybe and List are both monads, replace maybe with the list monad in future.
+    , portals :: [Portal]
     } deriving Show
 
+-- portals are indices going from right to left, starting from 0.
+data Prop = PropPortal Portal
+
+type Portal = (Int, Int)
+
 type Storage = Maybe Int
+
 
 -- Even if it's points-free, you still have to include everything in the signature.
 successor :: Calc -> (Int -> [(Move, Int)])
@@ -82,9 +90,34 @@ writeMemToMoves mlst mem =
       Nothing -> mlst
       Just i -> MemCon (show i) : filter (\m -> not $ isMemCon m) mlst
 
+-- in case a change button and a memcon button are both present.
 changeMem :: Change -> Maybe Storage -> Maybe Storage
 changeMem (Inc i) (Just (Just mem)) = Just (Just (i + mem))
 changeMem _ Nothing = Nothing
+
+
+-- convert array of digits (Char, specifically) into an Int
+readDigitArray :: Array Int Char -> Int
+readDigitArray a = undefined
+
+
+-- using Arrays?? in Haskell? preposterous. also, Array has no data constructors; it's just a type. but you do specify the inner types.
+doPortal :: Array Int Char -> Portal -> Array Int Char
+doPortal a (fromHere, toHere) =
+    let leavingDigit = a! fromHere
+
+
+-- update number based on portals
+doPortals :: Int -> Calc -> Int
+doPortals i c = 
+    let portals = portals c
+        si = reverse $ show i   -- we index from right to left
+        lsi = length si
+        arrI = listArray (0, lsi-1) si
+     in foldl doPortal arrI (portals c)
+
+
+-- In the future, we would write a doProperties function or something that used the Prop datatype, but we don't really need to so let's not.
 
 
 -- TODO: Write an interactive solve that can produce all solutions, instead of just one.
@@ -94,12 +127,12 @@ solve :: Calc -> [Move]
 solve c = reverse $ solve_help c [] (start c) (depth c) False
 
 -- take problem, take past moves, take current state, take moves left, return future moves
--- this is a depth limited search - basically fix the first move and then explore the rest recursively.  move order matters somewhat, then - if you put the right move at the end of the moves list, this search will try all the wrong moves first.
+-- this is a depth limited search - basically fix the first move and then explore the rest recursively.  
+-- move order matters - if you put the only good move at the end of the movelist, the search will try all bad moves first.
 -- what kind of heuristic would work here? can't be distance to number, because Concat, Back, Trans are all wildly changing.  maybe INVERSE distance to number?  kind of insane.
 -- if stored, then don't append moves created through storage.
 solve_help :: Calc -> [Move] -> Int -> Int -> Bool -> [Move]
-solve_help c path i 0 stored = 
-    if test c i then path else []
+solve_help c path i 0 stored = if test c i then path else []
 solve_help c path i d stored =
     -- if test c i then path else   -- use this for exploration, not for solving.
     if invalid i 

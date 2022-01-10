@@ -10,6 +10,9 @@ import Data.List.Split (splitOn)
 -- import System.Environment   -- for getArgs
 import Debug.Trace
 
+data Button = Move | Change | Storage
+data Prop = Portal
+
 -- read and show are for String -> a and a -> String
 -- so for case statements haskell considers indentation of _, so don't space it out of line with the other cases.
 parseMove :: String -> Move
@@ -64,6 +67,20 @@ parseMoves mstr =
         storage = fromMaybe Nothing $ find isJust $ map parseStore buttons
      in trace (show storage) $ (moves, changes, storage)
 
+
+parsePortal :: String -> Portal
+parsePortal (pc:num) =
+    case pc of
+      'p' -> let args = splitOn ">" num
+              in Portal (read $ head args) (read $ head $ tail args)
+
+
+parseProperties :: String -> [Portal]
+parseProperties pstr =
+    let props = splitOn "," pstr
+        portals = mapMaybe parsePortal props
+     in portals
+
 readInt :: IO Int
 readInt = readLn
 
@@ -79,9 +96,12 @@ main = do
     goal <- readInt
     putStrLn "Enter number of moves:"
     depth <- readInt
-    putStrLn "Enter movelist.  See Main.hs for move list specification."
+    putStrLn "Enter buttons.  See Main.hs for button specification."
     ms <- getLine
+    putStrLn "Enter calculator properties (e.g. portals)."
+    ps <- getLine
     let (moves, changes, storage) = parseMoves ms
+        portals = parseProperties ps
         problem = 
             Calc { start   = start
                  , goal    = goal
@@ -89,13 +109,15 @@ main = do
                  , moves   = moves
                  , changes = changes
                  , storage = storage
+                 , portals = portals
                  }
      in print (solve problem)
     putStrLn "Do you want to continue? (Y/n)"
     continue <- getChar
     if continue == 'y' || continue == '\n'
        then main
-       else pure ()     -- 'pure' is a Monad function that wraps its argument in the proper monad. aka 'return'.
+       else return ()     
+       -- 'pure' is a Monad function that wraps its argument in the proper monad. aka 'return'. use to return from IO ()
 
 -- debugging: https://www.reddit.com/r/haskell/comments/oqb1g/using_print_statements_in_code_for_debugging/
 
