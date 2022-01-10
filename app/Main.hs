@@ -42,6 +42,7 @@ parseMove m =
           _   -> undefined
 
 parseChange :: String -> Maybe Change
+parseChange [] = Nothing
 parseChange (mc:num) = 
     case mc of
       '^' -> Just (Inc (read num))
@@ -68,6 +69,7 @@ parseMoves mstr =
 
 
 parsePortal :: String -> Maybe Portal
+parsePortal [] = Nothing
 parsePortal (pc:num) =
     case pc of
       'p' -> let args = splitOn ">" num
