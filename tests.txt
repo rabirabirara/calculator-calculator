@@ -4,3 +4,10 @@
 
 23 88 5 s4,s2,r,i
 Putting the moves in this order, the path would end up using Store and MemCon despite there being no such button.  Have to patch that out - if there's no storage button, there's no storage button.
+
+25 822 6 |,c5,#,b p3>1
+This one is weird! It actually can be done in only 4 moves.  The path: [c5,|,#,@672]
+The computer ended up finding a path with two redundant stores, which were the first and third moves originally.
+
+613 777 5 c5,m2,a3,r,i p3>0 (level 195)
+can be done in 3 moves,  and with only two buttons!

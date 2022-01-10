@@ -65,7 +65,7 @@ parseMoves mstr =
         changes = mapMaybe parseChange buttons
         -- remember, we only expect to have one Store button.  if there are more... TODO
         storage = fromMaybe Nothing $ find isJust $ map parseStore buttons
-     in trace (show storage) $ (moves, changes, storage)
+     in (moves, changes, storage)
 
 
 parsePortal :: String -> Maybe Portal

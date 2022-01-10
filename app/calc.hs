@@ -115,7 +115,7 @@ willPortal :: Int -> Int -> Bool
 willPortal i fromHere = i >= pow10 || i <= (negate pow10)
     where pow10 = 10 ^ fromHere
 
--- do a single portal, potentially recurse
+-- do a single portal, potentially recurse. also, this will still work even if there are digits beyond fromHere, because we are removing the digits from the list.
 doPortal :: Int -> Portal -> Int
 doPortal i (fromHere, toHere) =
     let (rsi, dc) = popAt fromHere (reverse $ show i)   -- * reverse si because we index from right to left
@@ -157,7 +157,7 @@ solve c = reverse $ solve_help c [] (start c) (depth c) False
 solve_help :: Calc -> [Move] -> Int -> Int -> Bool -> [Move]
 solve_help c path i 0 stored = if test c i then path else []
 solve_help c path i d stored =
-    -- if test c i then path else   -- use this for exploration, not for solving.
+    if test c i then path else   -- premature cutoff.  the game accepts premature solves, so this works.
     if invalid i 
        then [] 
        else 
