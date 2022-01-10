@@ -24,7 +24,7 @@ This is the syntax for describing available buttons to the solver.  It is a comm
 - ^n : Change the buttons on the calculator by adding n. (n can be negative)
 - |  : Mirror the digits.
 - cn : Concatenates n to the current number.
-- #  : Store the current number.
+- \#  : Store the current number.
 - @n : Concatenate n to the current number from a memory cell.
 - i  : Invert all digits - subtract them from 10.
 - hd : Shift to direction d, where d is either 'l' or 'r'.
