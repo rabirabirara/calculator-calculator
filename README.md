@@ -21,7 +21,7 @@ This is the syntax for describing available buttons to the solver.  It is a comm
 - +  : Sum up the digits.
 - r  : Reverse the digits.
 - b  : Backspace the least significant digit of the current number.  Produces 0 from single digit numbers.
-- ^n : Change the buttons on the calculator by adding n. (n can be negative)
+- \^n : Change the buttons on the calculator by adding n. (n can be negative)
 - |  : Mirror the digits.
 - cn : Concatenates n to the current number.
 - #  : Store the current number.
