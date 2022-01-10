@@ -2,16 +2,15 @@
 module Main (main) where
 
 -- We also choose what to import with lists in parentheses.
+import Util
 import Move
 import Calc
-import Data.Maybe (mapMaybe, isJust, fromMaybe)
+import Data.Maybe (mapMaybe, isJust, fromMaybe, listToMaybe)
 import Data.List (find)
 import Data.List.Split (splitOn)
 -- import System.Environment   -- for getArgs
 import Debug.Trace
 
-data Button = Move | Change | Storage
-data Prop = Portal
 
 -- read and show are for String -> a and a -> String
 -- so for case statements haskell considers indentation of _, so don't space it out of line with the other cases.
@@ -68,17 +67,20 @@ parseMoves mstr =
      in trace (show storage) $ (moves, changes, storage)
 
 
-parsePortal :: String -> Portal
+parsePortal :: String -> Maybe Portal
 parsePortal (pc:num) =
     case pc of
       'p' -> let args = splitOn ">" num
-              in Portal (read $ head args) (read $ head $ tail args)
+              in Just (((read :: String -> Int) $ head args), ((read :: String -> Int) $ head $ tail args))
+      _   -> Nothing
 
 
 parseProperties :: String -> [Portal]
 parseProperties pstr =
     let props = splitOn "," pstr
         portals = mapMaybe parsePortal props
+        -- only one portal. if more: TODO  we could easily support a list of them, of course, though I doubt it would work in gameplay.
+        -- refer to this portal parsing implementation when supporting several store buttons.
      in portals
 
 readInt :: IO Int
@@ -101,7 +103,7 @@ main = do
     putStrLn "Enter calculator properties (e.g. portals)."
     ps <- getLine
     let (moves, changes, storage) = parseMoves ms
-        portals = parseProperties ps
+        portals  = parseProperties ps
         problem = 
             Calc { start   = start
                  , goal    = goal
@@ -109,7 +111,7 @@ main = do
                  , moves   = moves
                  , changes = changes
                  , storage = storage
-                 , portals = portals
+                 , portal  = listToMaybe portals    -- again, just the one portal.
                  }
      in print (solve problem)
     putStrLn "Do you want to continue? (Y/n)"

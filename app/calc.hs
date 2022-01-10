@@ -1,8 +1,8 @@
-module Calc (Calc (..), Change (..), Storage (..), Prop (..), solve) where
+module Calc (Calc (..), Change (..), Storage (..), Portal (..), solve) where
 
+import Util
 import Move
-import Data.Maybe (isJust)
-import Data.Array (listArray)
+import Data.Maybe (isJust, fromMaybe)
 import Debug.Trace
 
 -- record syntax - for product types with named type constructors
@@ -12,12 +12,12 @@ data Calc = Calc
     , depth   :: Int
     , moves   :: [Move]
     , changes :: [Change]   -- for buttons that alter moves
-    , storage :: Maybe Storage  -- TODO: Maybe and List are both monads, replace maybe with the list monad in future.
-    , portals :: [Portal]
+    , storage :: Maybe Storage  -- TODO: Maybe and List are both monads, replace maybe with the list monad in future.  Multiple stores is definitely feasible.
+    , portal  :: Maybe Portal   -- in the future, who knows? maybe we control the portals instead of having them be automatic.
     } deriving Show
 
 -- portals are indices going from right to left, starting from 0.
-data Prop = PropPortal Portal
+-- data Prop = PropPortal Portal
 
 type Portal = (Int, Int)
 
@@ -25,8 +25,10 @@ type Storage = Maybe Int
 
 
 -- Even if it's points-free, you still have to include everything in the signature.
-successor :: Calc -> (Int -> [(Move, Int)])
-successor c = ((flip doMoves) (moves c))
+-- get results of applying moves, as well as factoring in portals.
+successor :: Int -> Calc -> [(Move, Int)]
+successor i c = let nextStates = doMoves i (moves c)
+                 in fromMaybe nextStates (applyPortals nextStates c)
 
 test :: Calc -> (Int -> Bool)
 test c = (== (goal c))
@@ -57,10 +59,11 @@ change c ch =
              , changes = changes c
              -- fmap Just (mx) will wrap mx in second Just or leave as Nothing
              , storage = newStorage
+             , portal  = portal c
              }
 
 incMove :: Int -> Move -> Move
-incMove i mv = trace "HERE" $
+incMove i mv =
     case mv of
       Add num -> Add (num + i)
       Sub num -> Sub (num + i)
@@ -81,6 +84,7 @@ writeMem i c = Calc { start = start c
                     , moves = writeMemToMoves (moves c) (Just i)
                     , changes = changes c
                     , storage = Just (Just i)
+                    , portal = portal c
                     }
 
 -- update a movelist with memory by erasing the old memconcat buttons and adding the new one.
@@ -96,26 +100,45 @@ changeMem (Inc i) (Just (Just mem)) = Just (Just (i + mem))
 changeMem _ Nothing = Nothing
 
 
--- convert array of digits (Char, specifically) into an Int
-readDigitArray :: Array Int Char -> Int
-readDigitArray a = undefined
+
+-- incremental update: remove an item at index i from lst and return it and the new list
+popAt :: Int -> [a] -> ([a], a)
+popAt i lst = popAtHelp i lst []
+
+popAtHelp :: Int -> [a] -> [a] -> ([a], a)
+popAtHelp _ [] newlst = undefined   -- out of bounds error
+popAtHelp 0 (h:t) newlst = ((reverse newlst) ++ t, h)
+popAtHelp i (h:t) newlst = popAtHelp (i-1) t (h : newlst)
 
 
--- using Arrays?? in Haskell? preposterous. also, Array has no data constructors; it's just a type. but you do specify the inner types.
-doPortal :: Array Int Char -> Portal -> Array Int Char
-doPortal a (fromHere, toHere) =
-    let leavingDigit = a! fromHere
+willPortal :: Int -> Int -> Bool
+willPortal i fromHere = i >= pow10 || i <= (negate pow10)
+    where pow10 = 10 ^ fromHere
 
+-- do a single portal, potentially recurse
+doPortal :: Int -> Portal -> Int
+doPortal i (fromHere, toHere) =
+    let (rsi, dc) = popAt fromHere (reverse $ show i)   -- * reverse si because we index from right to left
+        (ri, d) = (read $ reverse rsi, toInt dc)
+        addThis = d * (10 ^ toHere)
+        newi = ri + addThis
+     in if willPortal newi fromHere  -- if the number has enough digits to portal
+           then doPortal newi (fromHere, toHere)
+           else newi
 
--- update number based on portals
-doPortals :: Int -> Calc -> Int
-doPortals i c = 
-    let portals = portals c
-        si = reverse $ show i   -- we index from right to left
-        lsi = length si
-        arrI = listArray (0, lsi-1) si
-     in foldl doPortal arrI (portals c)
+-- update number based on portal, if the number will portal
+doPortals :: Int -> Calc -> Portal -> Int
+doPortals i c (from, to) = 
+    if willPortal i from 
+       then doPortal i (from, to)
+       else i
 
+-- take successor states and maybe apply portals with your calc
+applyPortals :: [(Move, Int)] -> Calc -> Maybe [(Move, Int)]
+applyPortals nexts c =
+    case portal c of
+      Just (from, to) -> Just $ map (\(move, i) -> (move, doPortals i c (from, to))) nexts
+      Nothing -> Nothing
 
 -- In the future, we would write a doProperties function or something that used the Prop datatype, but we don't really need to so let's not.
 
@@ -138,7 +161,7 @@ solve_help c path i d stored =
     if invalid i 
        then [] 
        else 
-       let nextStates = successor c i
+       let nextStates = successor i c
            newCalcs = produceChanges c
            pathsPostStorage = 
                if isJust (storage c) && not stored 

@@ -1,5 +1,6 @@
 module Move (Move (..), Dir (..), doMoves, move, isMemCon) where
 
+import Util
 import Data.Char
 import Data.Maybe (mapMaybe)
 import Data.List (isInfixOf)
@@ -71,11 +72,6 @@ transform si a b =
         tb = pack b
      in read $ unpack $ replace ta tb ti
 
-toChr :: Int -> Char
-toChr i = chr $ i + 48
-
-toInt :: Char -> Int
-toInt c = ord c - 48
 
 -- if number is negative, result is negative
 sumDigits :: Int -> Int
