@@ -1,13 +1,31 @@
 module Move (Move (..), Dir (..), doMoves, move, isMemCon) where
 
 import Util
-import Data.Char
 import Data.Maybe (mapMaybe)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, sort)
 import Data.Text (Text (..), pack, unpack, replace)    -- for string functions
 import Debug.Trace
 
-data Move = Add Int | Sub Int | Mul Int | Div Int | Exp Int | Flip | Sum | Rev | Back | Change String | Mirror | Concat String | Store |  MemCon String | Inv10 | Shift Dir | Trans String String deriving Show
+data Move = 
+      Add Int 
+    | Sub Int 
+    | Mul Int 
+    | Div Int
+    | Exp Int
+    | Flip 
+    | Sum 
+    | Rev 
+    | Back 
+    | Change String 
+    | Mirror 
+    | Concat String 
+    | Store 
+    | MemCon String
+    | Inv10 
+    | Shift Dir 
+    | Sort Dir
+    | Trans String String deriving Show
+
 data Dir = L | R deriving Show
 
 -- To define a function, put the type signature first, then the function patterns.
@@ -37,6 +55,7 @@ move i  Store      = Nothing
 move i (MemCon sn) = if head sn == '-' then Nothing else Just (MemCon sn, conc i sn)
 move i  Inv10      = Just (Inv10, inv10 i)
 move i (Shift dir) = Just (Shift dir, shift i dir)
+move i (Sort dir)  = Just (Sort dir, sortDigits i dir)
 -- wastes of Trans moves are invalid - though this does mean 
 -- the solver won't find solves of less depth! can fix this with IDDFS
 move i (Trans a b) = 
@@ -130,3 +149,9 @@ invertChar10 c =
       '0' -> '0'
       d -> toChr $ 10 - toInt d
 
+sortDigits :: Int -> Dir -> Int
+sortDigits i R = read . sort . show $ i
+sortDigits i L =
+    if i < 0
+       then negate . read . reverse . sort . show . negate $ i
+       else read . reverse . sort . show $ i

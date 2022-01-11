@@ -37,6 +37,10 @@ parseMove m =
                    'l' -> Shift L
                    'r' -> Shift R
                    _   -> undefined
+          '=' -> case (head num) of
+                   'l' -> Sort L
+                   'r' -> Sort R
+                   _   -> undefined
           't' -> let args = splitOn ">" num 
                   in Trans (head args) (head $ tail args)
           _   -> undefined
@@ -88,6 +92,9 @@ parseProperties pstr =
 readInt :: IO Int
 readInt = readLn
 
+parseGoals :: String -> [Int]
+parseGoals s = map read $ splitOn "," s
+
 -- = vs. <-: https://stackoverflow.com/a/28625714/13553596
 -- also, use trace to print debug statements (not print)
 -- also, use putStrLn to print Strings, or you'll get double quotes (from show)
@@ -96,32 +103,49 @@ main :: IO ()
 main = do
     putStrLn "Enter starting number:"
     start <- readInt
-    putStrLn "Enter goal number:"
-    goal <- readInt
+    putStrLn "Enter goals:"
+    gs <- getLine
     putStrLn "Enter number of moves:"
     depth <- readInt
-    putStrLn "Enter buttons.  See Main.hs for button specification."
+    putStrLn "Enter buttons.  See README for button specification."
     ms <- getLine
     putStrLn "Enter calculator properties (e.g. portals)."
     ps <- getLine
     let (moves, changes, storage) = parseMoves ms
+        goals = parseGoals gs
         portals  = parseProperties ps
-        problem = 
+        problems = map (\g ->
             Calc { start   = start
-                 , goal    = goal
+                 , goal    = g
                  , depth   = depth
                  , moves   = moves
                  , changes = changes
                  , storage = storage
                  , portal  = listToMaybe portals    -- again, just the one portal.
                  }
-     in print (solve problem)
-    putStrLn "Do you want to continue? (Y/n)"
+                       ) goals
+     in printAllSolves goals (iddfsAll problems)
+    putStrLn "\nDo you want to continue? (Y/n)"
     continue <- getChar
     if continue == 'y' || continue == '\n'
        then main
        else return ()     
        -- 'pure' is a Monad function that wraps its argument in the proper monad. aka 'return'. use to return from IO ()
+
+
+-- takes a list of goals, a list of solves for a set of depths, pretty prints them
+printAllSolves :: [Int] -> [[[Move]]] -> IO ()
+printAllSolves gs pss = mapM_ printIddfsSolve (zip gs pss)
+
+-- pretty print iddfs result
+printIddfsSolve :: (Int, [[Move]]) -> IO ()
+printIddfsSolve (g, ps) = do
+    putStrLn $ (show g) ++ " :: "
+    mapM_ printSolve (zip [1..(length ps)] ps)
+
+-- pretty print a solution at depth d
+printSolve :: (Int, [Move]) -> IO ()
+printSolve (d,p) = putStrLn $ (show d) ++ ": " ++ (show p)
 
 -- debugging: https://www.reddit.com/r/haskell/comments/oqb1g/using_print_statements_in_code_for_debugging/
 

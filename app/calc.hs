@@ -1,4 +1,9 @@
-module Calc (Calc (..), Change (..), Storage (..), Portal (..), solve) where
+
+-- A Calc is an instance of a problem, with one start, one goal, one depth, and one set of buttons/properties.
+-- For multiple goals, just create multiple Calcs.
+-- For multiple depths,
+
+module Calc (Calc (..), Change (..), Storage (..), Portal (..), solve, iddfs, iddfsAll) where
 
 import Util
 import Move
@@ -142,9 +147,21 @@ applyPortals nexts c =
 
 -- In the future, we would write a doProperties function or something that used the Prop datatype, but we don't really need to so let's not.
 
+-- findAll :: Calc -> [[Move]]
+-- findAll finds all paths given a calc, of all depths.
+
+
+-- apply iddfs to every calc in a list
+iddfsAll :: [Calc] -> [[[Move]]]
+iddfsAll cs = map iddfs cs
+
+-- Given a calc, run iterative-deepening depth-first-search.
+-- Rather than finding all paths, it simply finds ONE path from each depth of moves.
+iddfs :: Calc -> [[Move]]
+iddfs c = map (\d -> reverse $ solve_help c [] (start c) d False) [1..(depth c)]
+
 
 -- TODO: Write an interactive solve that can produce all solutions, instead of just one.
--- TODO: Write an iterative-deepening depth-first-search as well, so we simply find all solutions given a certain depth.  Have it terminate at the shortest depth.
 -- Interestingly, the problem space just lends itself to multiple solutions, making it actually quite quick to find solutions to problems.
 solve :: Calc -> [Move]
 solve c = reverse $ solve_help c [] (start c) (depth c) False
@@ -157,7 +174,7 @@ solve c = reverse $ solve_help c [] (start c) (depth c) False
 solve_help :: Calc -> [Move] -> Int -> Int -> Bool -> [Move]
 solve_help c path i 0 stored = if test c i then path else []
 solve_help c path i d stored =
-    if test c i then path else   -- premature cutoff.  the game accepts premature solves, so this works.
+    -- if test c i then path else   -- premature cutoff.  the game accepts premature solves, so this works.  This isn't needed since we do IDDFS and thus our search is optimal.
     if invalid i 
        then [] 
        else 
