@@ -32,6 +32,7 @@ parseMove (mc:num) =
       'f' -> Flip
       '+' -> Sum
       'r' -> Rev
+      'R' -> Round 0
       'b' -> Back
       'B' -> Delete 0
       '^' -> Change num

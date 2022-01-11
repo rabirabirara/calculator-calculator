@@ -15,6 +15,7 @@ data Move =
   | Flip 
   | Sum 
   | Rev 
+  | Round Int
   | Back 
   | Delete Int
   | Change String 
@@ -47,15 +48,15 @@ move i  Flip       = Just (Flip, negate i)
 move i  Rev        = Just (Rev, revInt i)
 -- Don't backspace if at fixed point.
 move i  Back       = if i == 0 then Nothing else Just (Back, del i)
-move i (Delete _)  = Nothing
+-- move i (Delete _)  = Nothing
 -- not supposed to be used - it's for display
-move _ (Change _)  = Nothing
+-- move _ (Change _)  = Nothing
 move i  Mirror     = Just (Mirror, mirror i)
 -- for some reason, concatenating a negative number breaks the game.  see lvl. 148
 move i (Concat sn) = if head sn == '-' then Nothing else Just (Concat sn, conc i sn)
-move _ (Insert _ _)  = Nothing
+-- move _ (Insert _ _)  = Nothing
 move i (Filter cn) = if cn == '-' then Nothing else Just (Filter cn, filterDigits i cn) 
-move i  Store      = Nothing
+-- move i  Store      = Nothing
 move i (MemCon sn) = if head sn == '-' then Nothing else Just (MemCon sn, conc i sn)
 move i  Inv10      = Just (Inv10, inv10 i)
 move i (Shift dir) = Just (Shift dir, shift i dir)
@@ -67,12 +68,13 @@ move i (Trans a b) =
      in if a `isInfixOf` si     -- if the number actually contains the digits
            then Just (Trans a b, transform si a b)
            else Nothing
--- move _ _ = Nothing
+move _ _ = Nothing
 
 -- buttons that perform multiple moves are handled here.
 multiMove :: Int -> Move -> Maybe [(Move, Int)]
-multiMove i (Delete _)  = if i == 0 then Nothing else Just (produceDeletes i)
+multiMove i (Delete _)    = if i == 0 then Nothing else Just (produceDeletes i)
 multiMove i (Insert sn _) = if head sn == '-' then Nothing else Just (produceInserts i sn)
+multiMove i (Round _)     = if i < 11 && i > -11 then Nothing else Just (produceRounds i)
 multiMove _ _ = Nothing
 
 -- gets rid of Nothing values (invalid moves)
@@ -131,7 +133,19 @@ ins :: String -> String -> String -> String
 ins s former latter = former ++ s ++ latter
 
 
+-- yes, length . show is the simple way out.  not like it costs much.
+produceRounds :: Int -> [(Move, Int)]
+produceRounds i = map (\k -> (Round k, roundToPlace i k)) [1..(length . show $ i)-1]
+
+
+-- it works pretty well.
+roundToPlace :: Int -> Int -> Int
+roundToPlace n k = f n k * 10^k
+    where k10 = 10.0 ^^ k
+          f :: Int -> Int -> Int
+          f n k = round (fromIntegral n / 10^^k)
      
+
 -- ord: Char -> Int, chr: Int -> Char ; these are by ascii code though
 transform :: String -> String -> String -> Int
 transform si a b = 
