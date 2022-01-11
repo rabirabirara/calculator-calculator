@@ -33,7 +33,7 @@ type Storage = Maybe Int
 -- get results of applying moves, as well as factoring in portals.
 successor :: Int -> Calc -> [(Move, Int)]
 successor i c = let nextStates = doMoves i (moves c)
-                 in fromMaybe nextStates (applyPortals nextStates c)
+                 in fromMaybe nextStates (applyPortals nextStates c)    -- if portals not applied, just give nextstates; else apply portals
 
 test :: Calc -> (Int -> Bool)
 test c = (== (goal c))

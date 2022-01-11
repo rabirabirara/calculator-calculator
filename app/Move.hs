@@ -2,7 +2,7 @@ module Move where--(Move (..), Dir (..), doMoves, move, isMemCon) where
 
 import Util
 import Data.Maybe (mapMaybe)
-import Data.List (isInfixOf, sort)
+import Data.List (isInfixOf, sort, subsequences, inits, tails)
 import Data.Text (Text (..), pack, unpack, replace)    -- for string functions
 import Debug.Trace
 
@@ -16,9 +16,11 @@ data Move =
   | Sum 
   | Rev 
   | Back 
+  | Delete Int
   | Change String 
   | Mirror 
   | Concat String 
+  | Insert String Int
   | Filter Char
   | Store 
   | MemCon String
@@ -44,14 +46,14 @@ move i  Sum        = Just (Sum, sumDigits i)
 move i  Flip       = Just (Flip, negate i)
 move i  Rev        = Just (Rev, revInt i)
 -- Don't backspace if at fixed point.
-move i  Back       = if i == 0
-                        then Nothing
-                        else Just (Back, delete i)
+move i  Back       = if i == 0 then Nothing else Just (Back, del i)
+move i (Delete _)  = Nothing
 -- not supposed to be used - it's for display
-move i (Change _)  = Nothing
+move _ (Change _)  = Nothing
 move i  Mirror     = Just (Mirror, mirror i)
 -- for some reason, concatenating a negative number breaks the game.  see lvl. 148
 move i (Concat sn) = if head sn == '-' then Nothing else Just (Concat sn, conc i sn)
+move _ (Insert _ _)  = Nothing
 move i (Filter cn) = if cn == '-' then Nothing else Just (Filter cn, filterDigits i cn) 
 move i  Store      = Nothing
 move i (MemCon sn) = if head sn == '-' then Nothing else Just (MemCon sn, conc i sn)
@@ -65,14 +67,22 @@ move i (Trans a b) =
      in if a `isInfixOf` si     -- if the number actually contains the digits
            then Just (Trans a b, transform si a b)
            else Nothing
+-- move _ _ = Nothing
+
+-- buttons that perform multiple moves are handled here.
+multiMove :: Int -> Move -> Maybe [(Move, Int)]
+multiMove i (Delete _)  = if i == 0 then Nothing else Just (produceDeletes i)
+multiMove i (Insert sn _) = if head sn == '-' then Nothing else Just (produceInserts i sn)
+multiMove _ _ = Nothing
 
 -- gets rid of Nothing values (invalid moves)
+-- do single moves, then do multimoves
 doMoves :: Int -> [Move] -> [(Move, Int)]
-doMoves i mlst = mapMaybe (move i) mlst
+doMoves i mlst = (mapMaybe (move i) mlst) ++ (concat $ mapMaybe (multiMove i) mlst)
 
 -- read :: String -> a, show :: a -> String
-delete :: Int -> Int
-delete i = if i < 10 && i > -10 
+del :: Int -> Int
+del i = if i < 10 && i > -10 
               then 0 
               else read $ deleteLast (show i)
 
@@ -81,9 +91,46 @@ deleteLast [] = []      -- unreachable
 deleteLast [n] = []
 deleteLast (h:t) = h : (deleteLast t)
 
+
+-- Back and Delete are different buttons, so I will continue to treat them differently.
+-- if you can delete the negative sign: TODO
+produceDeletes :: Int -> [(Move, Int)]
+produceDeletes i =
+    if i < 10 && i > -10
+       then [(Delete 0, 0)]
+       else let negative = i < 0
+                inorm = if negative then negate i else i
+                si = show i
+                len = length si - 1
+                fsis = (filter (\s -> length s == len)) . subsequences $ si
+                fis = map (\s -> if negative then negate . read $ s else read s) fsis
+             in map (\(idx, fi) -> (Delete idx, fi)) (zip [0..len] fis)
+
+            
+
 -- ? sn cannot be a negative number.  the game will just break!
 conc :: Int -> String -> Int
 conc i sn = read $ (show i) ++ sn
+
+
+produceInserts :: Int -> String -> [(Move, Int)]
+produceInserts ip sn =
+    let ng = ip < 0
+        i = if ng then negate ip else ip
+        si = show i
+        len = length si
+        (fs,ls,ns) = (inits si, tails si, reverse [0..len])
+        halves = if sn == "0" then zip3 (tail fs) (tail ls) (tail ns) else zip3 fs ls ns
+     in map (\(f,l,n) -> 
+         (Insert sn n, (if ng then negate else id) . read $ ins sn f l)
+         ) halves
+
+-- given a first and second half, attach s between them: former ++ s ++ latter
+-- * if ins never uses more than a digit, improve efficiency by changing s to a char and consing it latter instead.
+ins :: String -> String -> String -> String
+ins s former latter = former ++ s ++ latter
+
+
      
 -- ord: Char -> Int, chr: Int -> Char ; these are by ascii code though
 transform :: String -> String -> String -> Int

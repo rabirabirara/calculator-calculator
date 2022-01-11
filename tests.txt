@@ -14,3 +14,6 @@ can be done in 3 moves,  and with only two buttons!
 
 11 22 4 a5,m11,m12,/1 (level 2.48)
 bug check: filter removes all digits of the number.  in that case, it should give 0.
+
+3 6,8 3 a1,m5,m4,B (level 2.54)
+In this exact order.  I get a no parse. EDIT: Seems I was forgetting to put in the depth, and put the movelist instead...

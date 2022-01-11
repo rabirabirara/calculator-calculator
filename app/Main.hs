@@ -10,7 +10,6 @@ import Data.Char (isSpace)
 import Data.Maybe (mapMaybe, isJust, fromMaybe, listToMaybe)
 import Data.List (find)
 import Data.List.Split (splitOn)
--- import System.Environment   -- for getArgs
 import Debug.Trace
 
 
@@ -34,9 +33,11 @@ parseMove (mc:num) =
       '+' -> Sum
       'r' -> Rev
       'b' -> Back
+      'B' -> Delete 0
       '^' -> Change num
       '|' -> Mirror
       'c' -> Concat num
+      'C' -> Insert num 0
       '/' -> Filter (head num)
       '#' -> Store
       '@' -> MemCon num
