@@ -1,4 +1,5 @@
 -- The module can choose functions/types to export by placing them and their constructors in the module statement.
+-- TODO: Implement the password solving feature in levels of multiple 20.
 module Main (main) where
 
 -- We also choose what to import with lists in parentheses.
@@ -30,6 +31,7 @@ parseMove m =
           '^' -> Change num
           '|' -> Mirror
           'c' -> Concat num
+          '/' -> Filter (head num)
           '#' -> Store
           '@' -> MemCon num
           'i' -> Inv10
@@ -105,7 +107,7 @@ main = do
     start <- readInt
     putStrLn "Enter goals:"
     gs <- getLine
-    putStrLn "Enter number of moves:"
+    putStrLn "Enter depth (number of moves):"
     depth <- readInt
     putStrLn "Enter buttons.  See README for button specification."
     ms <- getLine
@@ -159,5 +161,9 @@ Frankly looks like a hard problem, but who knows, maybe some emergent behavior w
 -Honestly seems like a heuristic for this is as hard as solving the Collatz conjecture.
 
 -Actually, there may yet be a heuristic.  For example, fail-fast is possible - moves such as Mirror are bound to fail-fast, and Trans is sometimes impossible.
+
+
+--Interesting math problem: given a Calc, i.e. a set of buttons (no properties) and a starting number, what are all reachable numbers within the given moves?  With no move limit?  (i.e. find the entire range of the calc from the start)  With any start n?
+As I see it this is only possible through computer search, the same way we can't tell why all numbers reach 1 per the Collatz conjecture.
 
 -}

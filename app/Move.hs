@@ -7,24 +7,25 @@ import Data.Text (Text (..), pack, unpack, replace)    -- for string functions
 import Debug.Trace
 
 data Move = 
-      Add Int 
-    | Sub Int 
-    | Mul Int 
-    | Div Int
-    | Exp Int
-    | Flip 
-    | Sum 
-    | Rev 
-    | Back 
-    | Change String 
-    | Mirror 
-    | Concat String 
-    | Store 
-    | MemCon String
-    | Inv10 
-    | Shift Dir 
-    | Sort Dir
-    | Trans String String deriving Show
+    Add Int 
+  | Sub Int 
+  | Mul Int 
+  | Div Int
+  | Exp Int
+  | Flip 
+  | Sum 
+  | Rev 
+  | Back 
+  | Change String 
+  | Mirror 
+  | Concat String 
+  | Filter Char
+  | Store 
+  | MemCon String
+  | Inv10 
+  | Shift Dir 
+  | Sort Dir
+  | Trans String String deriving Show
 
 data Dir = L | R deriving Show
 
@@ -51,6 +52,7 @@ move i (Change _)  = Nothing
 move i  Mirror     = Just (Mirror, mirror i)
 -- for some reason, concatenating a negative number breaks the game.  see lvl. 148
 move i (Concat sn) = if head sn == '-' then Nothing else Just (Concat sn, conc i sn)
+move i (Filter cn) = if cn == '-' then Nothing else Just (Filter cn, filterDigits i cn) 
 move i  Store      = Nothing
 move i (MemCon sn) = if head sn == '-' then Nothing else Just (MemCon sn, conc i sn)
 move i  Inv10      = Just (Inv10, inv10 i)
@@ -155,3 +157,7 @@ sortDigits i L =
     if i < 0
        then negate . read . reverse . sort . show . negate $ i
        else read . reverse . sort . show $ i
+
+-- remove all occurences of cn from i
+filterDigits :: Int -> Char -> Int
+filterDigits i cn = read . filter (\c -> c /= cn) . show $ i
