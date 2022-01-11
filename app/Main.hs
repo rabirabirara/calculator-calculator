@@ -6,6 +6,7 @@ module Main (main) where
 import Util
 import Move
 import Calc
+import Data.Char (isSpace)
 import Data.Maybe (mapMaybe, isJust, fromMaybe, listToMaybe)
 import Data.List (find)
 import Data.List.Split (splitOn)
@@ -13,39 +14,44 @@ import Data.List.Split (splitOn)
 import Debug.Trace
 
 
+-- removes whitespace from a string, inside and outside
+removeWhitespace :: String -> String
+removeWhitespace = (filter (not . isSpace))
+
+
 -- read and show are for String -> a and a -> String
 -- so for case statements haskell considers indentation of _, so don't space it out of line with the other cases.
 parseMove :: String -> Move
-parseMove m = 
-    let (mc : num) = m
-     in case mc of
-          'a' -> Add (read num) 
-          's' -> Sub (read num) 
-          'm' -> Mul (read num) 
-          'd' -> Div (read num) 
-          'e' -> Exp (read num) 
-          'f' -> Flip
-          '+' -> Sum
-          'r' -> Rev
-          'b' -> Back
-          '^' -> Change num
-          '|' -> Mirror
-          'c' -> Concat num
-          '/' -> Filter (head num)
-          '#' -> Store
-          '@' -> MemCon num
-          'i' -> Inv10
-          'h' -> case (head num) of
-                   'l' -> Shift L
-                   'r' -> Shift R
-                   _   -> undefined
-          '=' -> case (head num) of
-                   'l' -> Sort L
-                   'r' -> Sort R
-                   _   -> undefined
-          't' -> let args = splitOn ">" num 
-                  in Trans (head args) (head $ tail args)
-          _   -> undefined
+parseMove [] = undefined
+parseMove (mc:num) = 
+    case mc of
+      'a' -> Add (read num) 
+      's' -> Sub (read num) 
+      'm' -> Mul (read num) 
+      'd' -> Div (read num) 
+      'e' -> Exp (read num) 
+      'f' -> Flip
+      '+' -> Sum
+      'r' -> Rev
+      'b' -> Back
+      '^' -> Change num
+      '|' -> Mirror
+      'c' -> Concat num
+      '/' -> Filter (head num)
+      '#' -> Store
+      '@' -> MemCon num
+      'i' -> Inv10
+      'h' -> case (head num) of
+               'l' -> Shift L
+               'r' -> Shift R
+               _   -> undefined
+      '=' -> case (head num) of
+               'l' -> Sort L
+               'r' -> Sort R
+               _   -> undefined
+      't' -> let args = splitOn ">" num 
+              in Trans (head args) (head $ tail args)
+      _   -> undefined
 
 parseChange :: String -> Maybe Change
 parseChange [] = Nothing
@@ -66,7 +72,7 @@ parseStore (mc:num) =
 -- the Change type constructors in Move are for display only
 parseMoves :: String -> ([Move], [Change], Maybe Storage)
 parseMoves mstr = 
-    let buttons = splitOn "," mstr
+    let buttons = (splitOn ",") . removeWhitespace $ mstr
         moves = map parseMove buttons
         changes = mapMaybe parseChange buttons
         -- remember, we only expect to have one Store button.  if there are more... TODO
@@ -95,7 +101,7 @@ readInt :: IO Int
 readInt = readLn
 
 parseGoals :: String -> [Int]
-parseGoals s = map read $ splitOn "," s
+parseGoals s = (map read) . (splitOn ",") . removeWhitespace $ s
 
 -- = vs. <-: https://stackoverflow.com/a/28625714/13553596
 -- also, use trace to print debug statements (not print)
@@ -126,7 +132,8 @@ main = do
                  , portal  = listToMaybe portals    -- again, just the one portal.
                  }
                        ) goals
-     in printAllSolves goals (iddfsAll problems)
+        solves = iddfsAll problems
+     in printAllSolves goals solves
     putStrLn "\nDo you want to continue? (Y/n)"
     continue <- getChar
     if continue == 'y' || continue == '\n'
@@ -150,6 +157,7 @@ printSolve :: (Int, [Move]) -> IO ()
 printSolve (d,p) = putStrLn $ (show d) ++ ": " ++ (show p)
 
 -- debugging: https://www.reddit.com/r/haskell/comments/oqb1g/using_print_statements_in_code_for_debugging/
+-- also, use the ghci debugger.  with cabal, the command would be: `cabal repl --repl-options=-prof`. then :? when in ghci to look around.
 
 {- NOTES 
 So, we know that the order that the moves are given in matters slightly.  We also know that we need a heuristic for choosing the order of moves in doMoves.

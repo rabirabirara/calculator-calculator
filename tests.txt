@@ -9,5 +9,8 @@ Putting the moves in this order, the path would end up using Store and MemCon de
 This one is weird! It actually can be done in only 4 moves.  The path: [c5,|,#,@672]
 The computer ended up finding a path with two redundant stores, which were the first and third moves originally.
 
-613 777 5 c5,m2,a3,r,i p3>0 (level 195)
+613 777 5 c5,m2,a3,r,i p3>0 (level 1.195)
 can be done in 3 moves,  and with only two buttons!
+
+11 22 4 a5,m11,m12,/1 (level 2.48)
+bug check: filter removes all digits of the number.  in that case, it should give 0.

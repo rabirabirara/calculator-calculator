@@ -1,4 +1,4 @@
-module Move (Move (..), Dir (..), doMoves, move, isMemCon) where
+module Move where--(Move (..), Dir (..), doMoves, move, isMemCon) where
 
 import Util
 import Data.Maybe (mapMaybe)
@@ -97,14 +97,14 @@ transform si a b =
 -- if number is negative, result is negative
 sumDigits :: Int -> Int
 sumDigits i = if i < 0
-                 then negate $ sum $ map toInt $ tail $ show i
-                 else sum $ map toInt $ show i
+                 then negate . sum . (map toInt) . tail . show $ i
+                 else sum . (map toInt) . show $ i
 
 -- reverse an integer's digits
 revInt :: Int -> Int
 revInt i = if i < 0
-              then negate $ (read . reverse) $ tail $ show i
-              else (read . reverse) $ show i
+              then negate . read . reverse . tail . show $ i
+              else read . reverse . show $ i
 
 -- false is left, true is right
 shift :: Int -> Dir -> Int
@@ -159,5 +159,10 @@ sortDigits i L =
        else read . reverse . sort . show $ i
 
 -- remove all occurences of cn from i
+-- ! If all the digits = cn, then simply return 0!
 filterDigits :: Int -> Char -> Int
-filterDigits i cn = read . filter (\c -> c /= cn) . show $ i
+filterDigits i cn = 
+    let fs = filter (\c -> c /= cn) . show $ i
+     in if null fs
+           then 0
+           else read fs

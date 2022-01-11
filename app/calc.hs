@@ -3,7 +3,7 @@
 -- For multiple goals, just create multiple Calcs.
 -- For multiple depths,
 
-module Calc (Calc (..), Change (..), Storage (..), Portal (..), solve, iddfs, iddfsAll) where
+module Calc where --(Calc (..), Change (..), Storage (..), Portal (..), solve, iddfs, iddfsAll) where
 
 import Util
 import Move
