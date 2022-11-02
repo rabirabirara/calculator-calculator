@@ -1,4 +1,4 @@
-# calculator-solver
+# calculator-calculator
 Solves puzzles from the game "Calculator: The Game".
 
 ## How to use
